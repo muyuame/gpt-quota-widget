@@ -1,0 +1,33 @@
+{
+  "name": "gpt-quota-widget",
+  "version": "1.0.1",
+  "description": "通过 Codex 启动、关闭 GPT 形象挂件并查询官方剩余额度百分比。",
+  "requires_local_executor": true,
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "license": "MIT",
+  "interface": {
+    "displayName": "GPT 额度挂件",
+    "shortDescription": "GPT 形象挂件，支持额度百分比、每轮消耗和点击互动。",
+    "longDescription": "在 Windows 本机运行透明挂件，保留 GPT 形象、拖拽、随机语句、额度缓存及每轮消耗提示。插件提供启动、关闭、状态和官方额度查询工具，复用现有挂件安装与个人设置。",
+    "developerName": "本地定制",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "启动 GPT 额度挂件",
+      "查看我剩余的 Codex 额度",
+      "关闭 GPT 额度挂件"
+    ],
+    "brandColor": "#536ba9",
+    "composerIcon": "./assets/gpt.png",
+    "logo": "./assets/gpt.png"
+  },
+  "keywords": [
+    "codex",
+    "gpt",
+    "quota",
+    "widget"
+  ]
+}

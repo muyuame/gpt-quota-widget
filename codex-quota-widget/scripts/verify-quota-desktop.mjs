@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+const root = path.resolve(import.meta.dirname, '..');
+const output = path.join(root, 'qa-output');
+const dataDir = fs.mkdtempSync(path.join(root, 'qa-fixture-'));
+const env = { ...process.env, WHALE_DESKTOP_TEST: '1', WHALE_QUOTA_TEST: '1', WHALE_DESKTOP_VERIFY_DIR: output, WHALE_HOME: dataDir };
+delete env.ELECTRON_RUN_AS_NODE;
+const child = spawn(path.join(root, 'data/desktop-runtime/node_modules/electron/dist/electron.exe'), [path.join(root, 'desktop/main.cjs'), '--whale-data=' + dataDir], { env, stdio: 'pipe', windowsHide: true });
+let diagnostic = ''; child.stderr.on('data', chunk => { diagnostic += chunk; }); child.stdout.resume();
+const timer = setTimeout(() => child.kill(), 30000);
+const [code] = await once(child, 'close'); clearTimeout(timer);
+const report = path.join(output, 'quota-desktop.json');
+if (fs.existsSync(report)) console.log(fs.readFileSync(report, 'utf8')); else console.log(diagnostic);
+process.exitCode = code || 0;

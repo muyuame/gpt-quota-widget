@@ -1,0 +1,10 @@
+{
+  "name": "gpt-quota-local",
+  "interface": { "displayName": "GPT 额度挂件 · 本地插件" },
+  "plugins": [{
+    "name": "gpt-quota-widget",
+    "source": { "source": "local", "path": "./plugins/gpt-quota-widget" },
+    "policy": { "installation": "AVAILABLE", "authentication": "ON_USE" },
+    "category": "Productivity"
+  }]
+}
