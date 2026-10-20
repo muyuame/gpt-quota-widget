@@ -16,7 +16,7 @@
     "uninstall:mac": "node scripts/uninstall-macos.mjs",
     "probe:mac": "node scripts/probe-macos.mjs"
   },
-  "codexBuild": "gpt-proportional-bubble-gradient-20261014",
+  "codexBuild": "gpt-bubble-painted-hit-20261020",
   "distributionName": "Codex-v0.4(fixixed)",
   "releaseTag": "codex-v0.4.0(fixixed)"
 }

@@ -20,7 +20,7 @@
     for (const el of document.querySelectorAll(surfaces)) {
       if (el.matches('.whale-account-card')) {
         const target = document.elementFromPoint(p.x, p.y);
-        if (visible(el) && target?.closest('.quota-inside,.quota-thought path,.quota-thought ellipse')) return true;
+        if (visible(el) && target && el.contains(target) && target.closest('.quota-thought path,.quota-thought ellipse,.quota-actions button')) return true;
       } else if (acceptsInput(el) && contains(el, p)) return true;
     }
     // Transparent modal backdrops are not input surfaces. Only the bounded

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { makeFixture as baseFixture } from './desktop-fixture.mjs';
+import { assertHeadUnobstructed } from './head-hit-regression.mjs';
 const pause = ms => new Promise(r => setTimeout(r, ms));
 const quotaFixture = { delay: 0, usedPercent: 12, fail: false };
 let lastQuota = null;
@@ -65,6 +66,7 @@ export async function verifyDesktop({ app, window, screen, setHost, setTestCurso
       assert.ok(Math.abs(layout.heading-layout.root.width*66/1026)<.1);
       assert.ok(Math.abs(layout.label-layout.root.width*52/1026)<.1);
       assert.ok(Math.abs(layout.number-layout.root.width*128/1026)<.1);
+      await assertHeadUnobstructed(ev,click,'scale '+scale);
       scaling.push({scale,...layout});
       const viewport = {x:Math.max(0,Math.floor(layout.root.left-16)),y:Math.max(0,Math.floor(layout.root.top-16)),width:Math.ceil(layout.root.width+32),height:Math.ceil(layout.root.height+32)};
       fs.writeFileSync(path.join(output,`widget-scale-${scale}.png`),(await window.webContents.capturePage(viewport)).toPNG());
@@ -104,7 +106,16 @@ export async function verifyDesktop({ app, window, screen, setHost, setTestCurso
     assert.equal(await ev("document.querySelector('.quota-update-status').textContent"), '更新失败');
     checks.push('failed refresh preserves the last percentages');
     quotaFixture.delay = 0; quotaFixture.fail = false; quotaFixture.usedPercent = 12;
-    await ev("WhaleAccountView.refresh(true)"); checks.push('manual refresh');
+    await ev("WhaleAccountView.refresh(true)");
+    // Hover the painted body, then click the real refresh control in its visible area.
+    const bodyPoint=await ev("(()=>{const r=document.querySelector('.quota-inside').getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)}})()");
+    setTestCursor(bodyPoint);window.webContents.sendInputEvent({type:'mouseMove',...bodyPoint});await pause(100);
+    const refreshPoint=await ev("(()=>{const e=document.querySelector('.quota-actions button'),r=e.getBoundingClientRect(),p={x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)};return {...p,isButton:document.elementFromPoint(p.x,p.y)===e,nativeHit:__whaleInputTest.hit(p)}})()");
+    assert.equal(refreshPoint.isButton,true,'visible refresh button remains clickable');assert.equal(refreshPoint.nativeHit,true);
+    quotaFixture.usedPercent=14;await click(refreshPoint.x,refreshPoint.y);
+    await wait("document.querySelector('.quota-value')?.textContent==='86%'",'refresh control fetches the next snapshot');
+    quotaFixture.usedPercent=12;await ev("WhaleAccountView.refresh(true)");
+    checks.push('manual refresh button remains clickable inside the painted bubble');
     quotaFixture.delay = 1100;
     await ev("window.__randomRefresh=WhaleAccountView.refresh(true); true");
     await clickBubble();
@@ -114,6 +125,8 @@ export async function verifyDesktop({ app, window, screen, setHost, setTestCurso
     assert.equal(await ev("!!document.querySelector('.quota-random-content .dshwv-trow')"),true);
     await ev("window.__randomRefresh");
     assert.equal(await ev("document.querySelector('.quota-random-content').textContent"),firstPhrase);
+    await assertHeadUnobstructed(ev,click,'random phrase');
+    checks.push('head clicks through transparent bubble bounds without advancing or closing a phrase');
     const randomViewport = await ev("(()=>{const a=document.querySelector('.dshwv-img').getBoundingClientRect(),b=document.querySelector('.whale-account-card').getBoundingClientRect();return {x:Math.max(0,Math.floor(Math.min(a.left,b.left)-16)),y:Math.max(0,Math.floor(Math.min(a.top,b.top)-16)),width:Math.ceil(Math.max(a.right,b.right)-Math.min(a.left,b.left)+16),height:Math.ceil(Math.max(a.bottom,b.bottom)-Math.min(a.top,b.top)+16)}})()");
     window.webContents.invalidate();await pause(60);
     fs.writeFileSync(path.join(output,'random-bubble-preview.png'),(await window.webContents.capturePage(randomViewport)).toPNG());
@@ -151,7 +164,9 @@ export async function verifyDesktop({ app, window, screen, setHost, setTestCurso
     assert.ok(Math.abs(mirrored.bubble.left-mirrored.root.left)<1);
     assert.ok(Math.abs(mirrored.bubble.width-mirrored.root.width)<1);
     assert.ok(Math.abs((mirrored.inside.left+mirrored.inside.width/2-mirrored.bubble.left)/mirrored.bubble.width-.5575)<.01);
-    checks.push('drag snaps left and mirrors character and thought bubble');
+    await pause(450); // Let the drag-release squash settle before sampling head pixels.
+    await assertHeadUnobstructed(ev,click,'left mirror');
+    checks.push('drag snaps left and mirrors character and thought bubble; mirrored head remains clickable');
     await ev("window.dispatchEvent(new Event('whale-reset-position'))");await pause(600);
     // Exercise the real backend tracker -> local route -> automatic UI poll.
     const settingsFile = path.join(dataDir, '.dshw-size.json');
@@ -192,6 +207,10 @@ export async function verifyDesktop({ app, window, screen, setHost, setTestCurso
     await clickBubble();
     assert.equal(await ev("!!document.querySelector('.whale-account-card')"),false);
     checks.push('consumption bubble switches to phrase, then closes on the next bubble click');
+    await ev("WhaleAccountView.showTurn({id:'fixture:head-outline',phase:'complete',windows:[{percentagePoints:4,windowDurationMins:300},{percentagePoints:0,windowDurationMins:10080}]},0)");
+    await pause(450); await assertHeadUnobstructed(ev,click,'consumption');
+    await clickBubble(); await clickBubble();
+    checks.push('consumption head clicks leave the current bubble unchanged');
     quotaFixture.usedPercent = 12; quotaFixture.delay = 0;
     fs.writeFileSync(settingsFile, JSON.stringify(settings));
     await ev("WhaleAccountView.toggleBubble(document)");
