@@ -2,7 +2,11 @@ param()
 $ErrorActionPreference = 'Stop'
 $quotaSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $quotaWidget = Join-Path ([IO.Directory]::GetParent($quotaSource).FullName) 'codex-quota-widget'
-if (!(Test-Path -LiteralPath (Join-Path $quotaWidget 'scripts/start-quota.ps1'))) { throw 'Keep codex-quota-widget beside gpt-quota-plugin-source, then try again.' }
+foreach ($quotaRequired in @('scripts/start-quota.ps1', 'desktop/main.cjs', 'desktop/ui/account-view.js', 'assets/whale-widget.js')) {
+    if (!(Test-Path -LiteralPath (Join-Path $quotaWidget $quotaRequired) -PathType Leaf)) {
+        throw "缺少挂件程序文件：$quotaRequired。请克隆完整的私有仓库，确保 codex-quota-widget 和 gpt-quota-plugin-source 两个目录相邻；不能只安装插件子目录。"
+    }
+}
 $quotaNode = (Get-Command node.exe -ErrorAction Stop).Source
 $quotaCodex = (Get-Command codex.exe -ErrorAction Stop).Source
 $quotaMcpPath = Join-Path $quotaSource 'plugins/gpt-quota-widget/.mcp.json'

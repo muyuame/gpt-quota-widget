@@ -13,6 +13,8 @@
 
 本地挂件位于相邻的 `../codex-quota-widget` 目录。插件包只包含工具和说明，不复制登录信息、个人数据或 Electron。移动或克隆后，保持挂件目录和插件源码目录相邻，运行“安装插件.cmd”即可生成当前电脑的配置并安装。
 
+如果安装时提示缺少 `desktop`，说明只拿到了插件入口或工程不完整。请从[私有仓库根目录](https://github.com/muyuame/gpt-quota-widget)克隆整个工程；`codex-quota-widget/desktop/` 与本目录应当位于同一级。不要用旧版挂件目录覆盖新版源码。
+
 ## 安装与更新
 
 在此目录运行 `安装插件.cmd`，或在 PowerShell 运行：
